@@ -1,0 +1,19 @@
+MacBook-Pro-MacBook:bialystok macbook$ python3 extract.py --input /Users/macbook/Documents/chf-ufk/kw/bialystok
+Traceback (most recent call last):
+  File "extract.py", line 1624, in <module>
+    ids_list = read_previous_ids(args.output)
+  File "extract.py", line 250, in read_previous_ids
+    ids = pd.read_csv(path, encoding='utf-8', sep=';', dtype=str, usecols=['id'])
+  File "/usr/local/lib/python3.7/site-packages/pandas/io/parsers.py", line 702, in parser_f
+    return _read(filepath_or_buffer, kwds)
+  File "/usr/local/lib/python3.7/site-packages/pandas/io/parsers.py", line 429, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/usr/local/lib/python3.7/site-packages/pandas/io/parsers.py", line 895, in __init__
+    self._make_engine(self.engine)
+  File "/usr/local/lib/python3.7/site-packages/pandas/io/parsers.py", line 1122, in _make_engine
+    self._engine = CParserWrapper(self.f, **self.options)
+  File "/usr/local/lib/python3.7/site-packages/pandas/io/parsers.py", line 1895, in __init__
+    _validate_usecols_names(usecols, self.orig_names)
+  File "/usr/local/lib/python3.7/site-packages/pandas/io/parsers.py", line 1237, in _validate_usecols_names
+    "columns expected but not found: {missing}".format(missing=missing)
+ValueError: Usecols do not match columns, columns expected but not found: ['id']
