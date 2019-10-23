@@ -29,7 +29,7 @@ warnings.filterwarnings('ignore')
 
 #------------------------------------------------------------------------------
 
-VERSION = '9'
+VERSION = '10'
 
 #------------------------------------------------------------------------------
 ### LISTA KOLUMN DO ZAPISU ####################################################
@@ -48,6 +48,7 @@ COLUMNS = [
     'wojewodztwo'
 ]
 
+# property_types_in
 typy_nieruchomosci_in = [
     u'STANOWIĄCY ODRĘBNĄ NIERUCHOMOŚĆ',
     u'PRAWO DO LOKALU',
@@ -84,7 +85,7 @@ def logger(id='', fn='', numer='', text='', level='INFO', info=None):
     if not id and info:
         id = info['numer_ksiegi_wieczystej'].replace('/', '-')
     if not fn and info:
-        fn = info['nazwa_pliku'].keys()[0]
+        fn = list(info['nazwa_pliku'].keys())[0]
 
 #    print('> id:',    repr(id))
 #    print('> fn:',    repr(fn))
@@ -206,8 +207,9 @@ try:
     if sys.version_info[0] == 2:
         with open(args.wojewodztwa_csv, 'rb') as fh:
             reader = csv.reader(fh, delimiter=';')
-            # wczytanie calego pliku
+            # loading the entire file
             wojewodztwa = [[item.decode('utf-8') for item in row] for row in reader]
+            print(wojewodztwa)
     else:
         with open(args.wojewodztwa_csv, encoding='utf-8') as fh:
             reader = csv.reader(fh, delimiter=';')
@@ -234,9 +236,10 @@ except IOError as ex:
 
 def read_previous_ids(path):
     """
-    Wczytanie z istniejacego CSV tylko kolumny 'id'.
-    Plik ma okolo 81 kolumn wiec wczytanie tylko jednej sprawia,
-    ze przy pliku 9GB wczytuje jakies 500MB danych zamiast 9GB
+    Load only the 'id' column from an existing CSV.
+    The file has about 81 columns, so loading only one makes
+    that with a 9GB file it loads some 500MB of data 
+    instead of 9GB
     """
 
     # czas start
@@ -252,7 +255,7 @@ def read_previous_ids(path):
         logger(text='[DEBUG] tworzenie nowego DF', level='DEBUG')
         ids = pd.DataFrame({'id': []})
 
-    # usuniecie powtarzajacych sie numerow
+    # deleting duplicate numbers
     ids_list = list(ids['id'].unique())
 
     logger(text='liczba wczytanych ID: {}'.format(len(ids)))
@@ -269,7 +272,7 @@ def read_previous_ids(path):
 
 def prepare_files_map(path):
 
-    # uwzgledniam zarowno htm jak i html - uwzgledniam podfoldery
+    # both htm and html - subfolders are included
     lista_plikow = [{name: root} for root, dirs, files in os.walk(path) for name in files if name.lower().endswith((".html", ".htm"))]
 
     if args.debug_folders:
@@ -280,15 +283,16 @@ def prepare_files_map(path):
                 else:
                     print(C_RED, 'NIE', '|', root, '|', name, C_RESET)
 
-    # generowanie ID w oparciu o nazwe pliku
-    # wszystkie znaki nie alfanumeryczne sa zamieniane na pauze (-)
-    # wielokrotne pauzy zamieniam na pojedyncza oraz usuwam NR jako przedrostek
-    # zakladam format ID [A-Z0-9]-[0-9]-[0-9]
+    # generating an ID based on the file name
+    # all non-alphanumeric characters are converted to pauses (-)
+    # replace multiple pauses with a single pause and delete NR as the prefix
+    # assume format ID [A-Z0-9]-[0-9]-[0-9]
     slownik_nazw_plikow = {}
 
     for x in lista_plikow:
+        # print(x)
         try:
-            id_ = x.keys()[0]
+            id_ = list(x.keys())[0]
             id_ = id_.upper()
             id_ = id_.replace('NR ', '').replace('.HTML', '').replace('.HTM', '')
             id_ = re.sub('[^a-zA-Z0-9]', '-', id_)
@@ -300,10 +304,10 @@ def prepare_files_map(path):
             else:
                id_ = id_[:2] # przypadek plikow LD1M-00018101-1.htm, LD1M-00018101-2.htm, LD1M-00018101-3.htm
             id_ = '-'.join(id_)
-            logger(text='[DEBUG] prepare_files_map: ID: {} <- {}'.format(id_, x.keys()[0]), level='DEBUG')
-            slownik_nazw_plikow.update({x.keys()[0]: {'id': id_, 'root': x.values()[0]}})
+            logger(text='[DEBUG] prepare_files_map: ID: {} <- {}'.format(id_, list(x.keys())[0]), level='DEBUG')
+            slownik_nazw_plikow.update({list(x.keys())[0]: {'id': id_, 'root': list(x.values())[0]}})
         except:
-            logger('', x.keys()[0], '', u'nie mozna wczytac pliku ({})'.format(x.values()[0]), 'ERROR')
+            logger('', list(x.keys())[0], '', u'nie mozna wczytac pliku ({})'.format(list(x.values())[0]), 'ERROR')
 
     # lista samych ID
     lista_id_plikow = list(set([x['id'] for x in slownik_nazw_plikow.values()]))
@@ -320,7 +324,7 @@ def prepare_files_map(path):
 
 def analyse_pliki_powiazane(pliki_powiazane, info=None):
     """
-    Wyszukiwanie elementow wspolnych we wszystkich plikach
+    Search for common elements in all files
     - typ pliku
     - numer ksiegi wieczystej
     - typ nieruchomosci
@@ -331,8 +335,8 @@ def analyse_pliki_powiazane(pliki_powiazane, info=None):
     html_iv = []
 
     for t in pliki_powiazane:
-        filename = t.keys()[0]
-        folder   = t.values()[0]
+        filename = list(t.keys())[0]
+        folder   = list(t.values())[0]
         with open(os.path.join(folder, filename), 'r', encoding='utf-8') as f:
             html = BeautifulSoup(f.read(), 'html.parser')
 
@@ -1620,7 +1624,7 @@ def extract_form_iv_schemat_2(html, info=None):
 
 logger(text='[DEBUG] wczytywanie ID z pliku CSV: poczatek', level='DEBUG')
 
-# wczytanie z CSV samych IDs z poprzednich ekstrakcji
+# loading from CSV the same IDs from previous extractions
 ids_list = read_previous_ids(args.output)
 
 logger(text='[DEBUG] wczytywanie ID z pliku CSV: koniec', level='DEBUG')
@@ -1637,7 +1641,7 @@ if args.debug:
 
 logger(text='[DEBUG] grupowanie pliki HTML ze wzgledu na ID: poczatek', level='DEBUG')
 
-# agregowanie plikow wejsciowych ze wzgledu na id
+# aggregation of input files due to id
 ksiegi_wieczyste_mapa = prepare_files_map(args.input)
 
 logger(text='[DEBUG] grupowanie pliki HTML ze wzgledu na ID: koniec', level='DEBUG')
@@ -1646,10 +1650,10 @@ logger(text='[DEBUG] grupowanie pliki HTML ze wzgledu na ID: koniec', level='DEB
 
 logger(text='[DEBUG] usuwanie ID, ktore juz wyekstrahowano: poczatek', level='DEBUG')
 
-# usuwam z dalszej analizy ID plikow, ktore zostaly wczesniej wyekstrahowane
+# remove files that were previously extracted from further analysis
 tmp = list(ksiegi_wieczyste_mapa.keys())
 
-# DODANE: uzycie dataframe z samymi `id` (ids_list) zamiast dataframe ze wszystkimi danymi `results` (list(results.ids))
+# ADDED: using dataframe with only `id` (ids_list) instead of dataframe with all data` results` (list (results.ids))
 for i in tmp:
     if i in ids_list:
         ksiegi_wieczyste_mapa.pop(i)
@@ -1693,7 +1697,7 @@ for k in ksiegi_wieczyste_mapa:
         is_error = False
 
         # string z nazwami powiazanych plikow
-        tmp_nazwy_plikow = ", ".join(list(set([x['nazwa_pliku'].keys()[0] for x in io + ii + iv])))
+        tmp_nazwy_plikow = ", ".join(list(set([list(x['nazwa_pliku'].keys())[0] for x in io + ii + iv])))
 
         numery_ksiag = []
         typy_nieruchomosci = []
@@ -1861,9 +1865,9 @@ for k in ksiegi_wieczyste_mapa:
 
             record = {
                 'id': k,
-                'plik_io': io[0]['nazwa_pliku'].keys()[0] if io else None,
-                'plik_ii': ii[0]['nazwa_pliku'].keys()[0] if ii else None,
-                'plik_iv': iv[0]['nazwa_pliku'].keys()[0] if iv else None,
+                'plik_io': list(io[0]['nazwa_pliku'].keys())[0] if io else None,
+                'plik_ii': list(ii[0]['nazwa_pliku'].keys())[0] if ii else None,
+                'plik_iv': list(iv[0]['nazwa_pliku'].keys())[0] if iv else None,
                 'numer_ksiegi_wieczystej': numery_ksiag[0],
 
                 'miejscowosc': miejscowosc,
@@ -1970,6 +1974,7 @@ for k in ksiegi_wieczyste_mapa:
                 logger(k, ii[0]['nazwa_pliku'].keys()[0], numery_ksiag[0], u'nie odnaleziono osoby fizycznej ani podmiotu')
 
     except Exception as e:
+        raise e
         logger(k, '', '', 'nieobsluzony blad - {}'.format(e), 'ERROR')
         # DODANE: wypisywanie calego komunikaty o bledzie
         if args.debug:
@@ -1999,9 +2004,9 @@ if args.debug:
 if len(all_rows) > 0:
 
     if os.path.exists(args.output):
-        # dopisywanie bez naglowkow (header=None) z zachowaniem kolejnosci kolumn (columns=...)
+        # appending without headers (header = None) in column order (columns=...)
         all_rows.to_csv(args.output, index=False, sep=';', mode='a', encoding='utf-8', columns=COLUMNS, header=None)
     else:
-        # tworzenie nowego pliku z naglowkami z zachowaniem kolejnosci kolumn (columns=...)
+        # creating a new header file in column order (columns=...)
         all_rows.to_csv(args.output, index=False, sep=';', mode='a', encoding='utf-8', columns=COLUMNS)
 
