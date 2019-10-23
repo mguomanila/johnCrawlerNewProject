@@ -29,7 +29,7 @@ warnings.filterwarnings('ignore')
 
 #------------------------------------------------------------------------------
 
-VERSION = '9'
+VERSION = '10'
 
 #------------------------------------------------------------------------------
 ### LISTA KOLUMN DO ZAPISU ####################################################
@@ -84,7 +84,7 @@ def logger(id='', fn='', numer='', text='', level='INFO', info=None):
     if not id and info:
         id = info['numer_ksiegi_wieczystej'].replace('/', '-')
     if not fn and info:
-        fn = info['nazwa_pliku'].keys()[0]
+        fn = list(info['nazwa_pliku'].keys())[0]
 
 #    print('> id:',    repr(id))
 #    print('> fn:',    repr(fn))
@@ -288,7 +288,7 @@ def prepare_files_map(path):
 
     for x in lista_plikow:
         try:
-            id_ = x.keys()[0]
+            id_ = list(x.keys())[0]
             id_ = id_.upper()
             id_ = id_.replace('NR ', '').replace('.HTML', '').replace('.HTM', '')
             id_ = re.sub('[^a-zA-Z0-9]', '-', id_)
@@ -300,10 +300,10 @@ def prepare_files_map(path):
             else:
                id_ = id_[:2] # przypadek plikow LD1M-00018101-1.htm, LD1M-00018101-2.htm, LD1M-00018101-3.htm
             id_ = '-'.join(id_)
-            logger(text='[DEBUG] prepare_files_map: ID: {} <- {}'.format(id_, x.keys()[0]), level='DEBUG')
-            slownik_nazw_plikow.update({x.keys()[0]: {'id': id_, 'root': x.values()[0]}})
+            logger(text='[DEBUG] prepare_files_map: ID: {} <- {}'.format(id_, list(x.keys())[0]), level='DEBUG')
+            slownik_nazw_plikow.update({list(x.keys())[0]: {'id': id_, 'root': list(x.values())[0]}})
         except:
-            logger('', x.keys()[0], '', u'nie mozna wczytac pliku ({})'.format(x.values()[0]), 'ERROR')
+            logger('', list(x.keys())[0], '', u'nie mozna wczytac pliku ({})'.format(list(x.values())[0]), 'ERROR')
 
     # lista samych ID
     lista_id_plikow = list(set([x['id'] for x in slownik_nazw_plikow.values()]))
@@ -331,8 +331,8 @@ def analyse_pliki_powiazane(pliki_powiazane, info=None):
     html_iv = []
 
     for t in pliki_powiazane:
-        filename = t.keys()[0]
-        folder   = t.values()[0]
+        filename = list(t.keys())[0]
+        folder   = list(t.values())[0]
         with open(os.path.join(folder, filename), 'r', encoding='utf-8') as f:
             html = BeautifulSoup(f.read(), 'html.parser')
 
@@ -1693,7 +1693,7 @@ for k in ksiegi_wieczyste_mapa:
         is_error = False
 
         # string z nazwami powiazanych plikow
-        tmp_nazwy_plikow = ", ".join(list(set([x['nazwa_pliku'].keys()[0] for x in io + ii + iv])))
+        tmp_nazwy_plikow = ", ".join(list(set([list(x['nazwa_pliku'].keys())[0] for x in io + ii + iv])))
 
         numery_ksiag = []
         typy_nieruchomosci = []
@@ -1861,9 +1861,9 @@ for k in ksiegi_wieczyste_mapa:
 
             record = {
                 'id': k,
-                'plik_io': io[0]['nazwa_pliku'].keys()[0] if io else None,
-                'plik_ii': ii[0]['nazwa_pliku'].keys()[0] if ii else None,
-                'plik_iv': iv[0]['nazwa_pliku'].keys()[0] if iv else None,
+                'plik_io': list(io[0]['nazwa_pliku'].keys())[0] if io else None,
+                'plik_ii': list(ii[0]['nazwa_pliku'].keys())[0] if ii else None,
+                'plik_iv': list(iv[0]['nazwa_pliku'].keys())[0] if iv else None,
                 'numer_ksiegi_wieczystej': numery_ksiag[0],
 
                 'miejscowosc': miejscowosc,
